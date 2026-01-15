@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Elevator Challenge</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>Elevator Challenge</h1>
+
+    <div id="container">
+      <div id="building"></div>
+      <div id="floor-buttons"></div>
+    </div>
+
+    <button id="start-btn">Start</button>
+    <button id="reset-btn">Reset</button>
+
+    <!-- Load frontend modules -->
+    <script type="module">
+      import { renderFloors, renderButtons, startSimulation, resetUI } from './ui.js';
+
+      // Render floors and buttons
+      renderFloors();
+      renderButtons();
+
+      // Start simulation when clicking start
+      document.getElementById('start-btn').onclick = () => startSimulation();
+
+      // Reset elevator when clicking reset
+      document.getElementById('reset-btn').onclick = () => resetUI();
+    </script>
+  </body>
+</html>
