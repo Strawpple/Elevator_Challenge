@@ -6,29 +6,43 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <div id="background"></div>
+
     <h1>Elevator Challenge</h1>
 
     <div id="container">
       <div id="building"></div>
-      <div id="floor-buttons"></div>
+
+      <!-- Modern indicator panel -->
+      <div id="elevator-panel">
+        <div id="indicator-container">
+          <span id="direction">⬆️</span>
+          <span id="indicator">G</span>
+        </div>
+
+        <div id="floor-buttons"></div>
+      </div>
     </div>
 
-    <button id="start-btn">Start</button>
-    <button id="reset-btn">Reset</button>
+    <div id="controls">
+      <button id="start-btn">Start</button>
+      <button id="reset-btn">Reset</button>
+    </div>
 
     <!-- Load frontend modules -->
     <script type="module">
-      import { renderFloors, renderButtons, startSimulation, resetUI } from './ui.js';
+      import {
+        renderFloors,
+        renderButtons,
+        startSimulation,
+        resetUI,
+      } from "./ui.js";
 
-      // Render floors and buttons
       renderFloors();
       renderButtons();
 
-      // Start simulation when clicking start
-      document.getElementById('start-btn').onclick = () => startSimulation();
-
-      // Reset elevator when clicking reset
-      document.getElementById('reset-btn').onclick = () => resetUI();
+      document.getElementById("start-btn").onclick = () => startSimulation();
+      document.getElementById("reset-btn").onclick = () => resetUI();
     </script>
   </body>
 </html>

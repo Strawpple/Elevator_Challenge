@@ -38,43 +38,33 @@ app.post('/elevator/request', (req, res) => {
 })
 
 app.post('/elevator/move', (req, res) => {
-  // Determine all floors to visit
-  const allTargets = [
-    ...elevator.requests.map(r => r.currentFloor),   // people waiting
-    ...elevator.riders.map(r => r.dropOffFloor)     // people inside
-  ];
-
-  if (allTargets.length === 0) {
-    return res.json({
-      currentFloor: elevator.currentFloor,
-      requests: elevator.requests,
-      riders: elevator.riders
-    });
+  if (elevator.riders.length === 0) {
+    return res.json({ currentFloor: elevator.currentFloor });
   }
 
-  // Determine closest floor to move towards
-  let closest = allTargets.reduce((prev, curr) => {
-    return Math.abs(curr - elevator.currentFloor) < Math.abs(prev - elevator.currentFloor) ? curr : prev;
-  });
+  const targets = elevator.riders.map(r => r.dropOffFloor);
 
-  // Move one floor toward the closest target
+  const closest = targets.reduce((prev, curr) =>
+    Math.abs(curr - elevator.currentFloor) <
+    Math.abs(prev - elevator.currentFloor)
+      ? curr
+      : prev
+  );
+
   if (elevator.currentFloor < closest) elevator.currentFloor++;
   else if (elevator.currentFloor > closest) elevator.currentFloor--;
 
-  // Pick up anyone at the current floor
-  const pickups = elevator.requests.filter(r => r.currentFloor === elevator.currentFloor);
-  pickups.forEach(p => elevator.riders.push(p));
-  elevator.requests = elevator.requests.filter(r => r.currentFloor !== elevator.currentFloor);
-
-  // Drop off anyone at the current floor
-  elevator.riders = elevator.riders.filter(r => r.dropOffFloor !== elevator.currentFloor);
+  // Drop off riders
+  elevator.riders = elevator.riders.filter(
+    r => r.dropOffFloor !== elevator.currentFloor
+  );
 
   res.json({
     currentFloor: elevator.currentFloor,
-    requests: elevator.requests,
     riders: elevator.riders
   });
 });
+
 
 
 

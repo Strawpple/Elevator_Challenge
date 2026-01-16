@@ -1,72 +1,185 @@
+/* Background design */
 body {
-  font-family: Arial, sans-serif;
-  text-align: center;
-  background: #f4f6f8;
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(135deg, #ece9e6, #ffffff);
+  min-height: 100vh;
 }
 
+#background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url("https://www.transparenttextures.com/patterns/cubes.png");
+  opacity: 0.05;
+  z-index: -1;
+}
+
+h1 {
+  margin-top: 20px;
+  color: #333;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+/* Container */
 #container {
   display: flex;
+  gap: 40px;
+  margin-top: 30px;
   justify-content: center;
-  align-items: flex-end;
-  gap: 20px;
+  align-items: flex-start;
 }
 
-/* Building with floors */
+/* Building / elevator shaft */
 #building {
   position: relative;
-  width: 160px;
-  height: 500px;  /* taller to fit 10 floors */
-  border: 3px solid #222;
-  background: #fff;
+  width: 120px;
+  height: 500px;
+  border: 3px solid #444;
+  background: #f5f5f5;
   display: flex;
-  flex-direction: column-reverse; /* bottom floor at bottom */
+  flex-direction: column-reverse;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Floor container card */
-.floor {
-  flex: 1;
-  border-top: 1px solid #ccc;
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-weight: bold;
-  background: #f9f9f9;
-}
+
 
 /* Elevator */
 #elevator {
   position: absolute;
+  left: 0;
   width: 100%;
-  height: 40px;  /* smaller than floor for card style */
-  background: #3f51b5;
-  color: white;
-  font-size: 30px;
-  line-height: 40px;
-  border-radius: 5px;
+  height: 50px;
+  border-radius: 8px;
   text-align: center;
-  transition: bottom 0.8s ease;
-  z-index: 10;
+  line-height: 50px;
+  font-size: 26px;
+  background: linear-gradient(to right, #777, #555);
+  transition: bottom 0.4s linear;
+  box-shadow: inset 0 -4px 6px rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: space-between; /* for two door halves */
+  overflow: hidden;
+}
+
+#elevator::before,
+#elevator::after {
+  content: "";
+  width: 50%;
+  height: 100%;
+  background: inherit;
+  border-radius: 8px;
+  transition: transform 0.6s ease-in-out;
+}
+
+/* When doors open, slide halves to sides */
+#elevator.open::before {
+  transform: translateX(-100%);
+}
+
+#elevator.open::after {
+  transform: translateX(100%);
+}
+
+/* Elevator panel */
+#elevator-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Indicator */
+#indicator-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 28px;
+  font-weight: bold;
+  padding: 12px 24px;
+  border: 2px solid #444;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  min-width: 90px;
 }
 
 /* Floor buttons */
 #floor-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 50px); /* two columns */
+  grid-auto-rows: 50px;
+  gap: 8px;
+  justify-content: center;
+  align-items: end; /* G at the bottom */
+}
+
+#floor-buttons .floor-btn {
   display: flex;
-  flex-direction: column-reverse; /* top = highest floor */
-  gap: 4px;
+  align-items: center;
+  justify-content: center;
 }
 
 .floor-btn {
-  width: 50px;
-  height: 40px;
-  font-size: 16px;
-  border: 1px solid #333;
+  width: 45px;
+  height: 45px;
+  border: 2px solid #444;
+  border-radius: 10px;
+  background: #fff;
   cursor: pointer;
-  background: #eee;
-  transition: background 0.3s ease;
+  font-weight: bold;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.floor-btn:hover {
+  background: #444;
+  color: #fff;
 }
 
 .floor-btn.active {
-  background: orange;
-  color: white;
+  background: #222;
+  color: #fff;
+  box-shadow: 0 0 8px #222;
+}
+
+/* Start / Reset buttons */
+#controls {
+  margin-top: 30px;
+  display: flex;
+  gap: 20px;
+}
+
+#start-btn,
+#reset-btn {
+  padding: 12px 28px;
+  font-size: 18px;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+#reset-btn {
+  background: linear-gradient(135deg, #fc5c7d, #6a82fb);
+}
+
+#start-btn:hover,
+#reset-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 }
