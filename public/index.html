@@ -24,9 +24,53 @@
       </div>
     </div>
 
+    <div id="stats">
+      <p>Total Floors Traversed: <span id="floors-count">0</span></p>
+      <p>Total Stops: <span id="stops-count">0</span></p>
+    </div>
+    <div
+      id="riders-list"
+      style="
+        margin-top: 12px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        max-width: 300px;
+      "
+    >
+      <strong>Riders Queue</strong>
+      <ul id="riders-items" style="margin-top: 8px; padding-left: 18px"></ul>
+    </div>
+
     <div id="controls">
+      <button id="take-elevator-btn">Take Elevator</button>
       <button id="start-btn">Start</button>
       <button id="reset-btn">Reset</button>
+    </div>
+
+    <div id="elevator-modal">
+      <div id="modal-content">
+        <span id="close-modal">✖</span>
+
+        <label for="passenger-name">Name:</label>
+        <input type="text" id="passenger-name" placeholder="Enter name" />
+
+        <label for="floor-select">Select Floor:</label>
+        <select id="floor-select">
+          <option value="0">G</option>
+          <option value="1">2</option>
+          <option value="2">3</option>
+          <option value="3">4</option>
+          <option value="4">5</option>
+          <option value="5">6</option>
+          <option value="6">7</option>
+          <option value="7">8</option>
+          <option value="8">9</option>
+          <option value="9">10</option>
+        </select>
+
+        <button id="submit-request">Submit</button>
+      </div>
     </div>
 
     <!-- Load frontend modules -->
@@ -36,13 +80,65 @@
         renderButtons,
         startSimulation,
         resetUI,
+        riders,
       } from "./ui.js";
 
       renderFloors();
       renderButtons();
 
-      document.getElementById("start-btn").onclick = () => startSimulation();
+      const takeBtn = document.getElementById("take-elevator-btn");
+      const modal = document.getElementById("elevator-modal");
+      const closeModal = document.getElementById("close-modal");
+      const submitBtn = document.getElementById("submit-request");
+      const nameInput = document.getElementById("passenger-name");
+      const floorSelect = document.getElementById("floor-select");
+
+      document.getElementById("start-btn").onclick = () => {
+        startSimulation([...riders]);
+        riders.length = 0;
+        updateRidersDisplay();
+      };
       document.getElementById("reset-btn").onclick = () => resetUI();
+
+      const FLOOR_LABELS = ["G", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+
+      const updateRidersDisplay = () => {
+        const list = document.getElementById("riders-items");
+        list.innerHTML = "";
+
+        if (riders.length === 0) {
+          list.innerHTML = "<li>No riders waiting</li>";
+          return;
+        }
+
+        riders.forEach((rider, index) => {
+          const li = document.createElement("li");
+          li.textContent = `${index + 1}. ${rider.name} → Floor ${
+            FLOOR_LABELS[rider.to]
+          }`;
+          list.appendChild(li);
+        });
+      };
+
+      takeBtn.onclick = () => {
+        modal.style.display = "flex";
+        nameInput.value = "";
+      };
+
+      closeModal.onclick = () => (modal.style.display = "none");
+      window.onclick = (e) => {
+        if (e.target === modal) modal.style.display = "none";
+      };
+
+      submitBtn.onclick = () => {
+        const name = nameInput.value.trim() || "Guest";
+        const floor = parseInt(floorSelect.value);
+        riders.push({ name, to: floor });
+
+        updateRidersDisplay();
+
+        modal.style.display = "none";
+      };
     </script>
   </body>
 </html>

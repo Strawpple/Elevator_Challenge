@@ -5,6 +5,8 @@ const floorButtonsEl = document.getElementById("floor-buttons");
 
 const FLOOR_HEIGHT = 50;
 
+export const riders = [];
+
 // Elevator element
 export const elevatorEl = document.createElement("div");
 elevatorEl.id = "elevator";
@@ -19,6 +21,7 @@ buildingEl.appendChild(elevatorEl);
 
 // Keep track of active buttons
 let activeRequests = [];
+const pendingRiderFloors = new Set(); // Tracks all rider destinations
 
 const FLOOR_LABELS = ["G", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 
@@ -44,11 +47,7 @@ export function renderButtons() {
       const floorNumber = FLOOR_LABELS.indexOf(label);
 
       // prevent duplicate requests
-      if (
-        activeRequests.some(
-          (b) => FLOOR_LABELS.indexOf(b.innerText) === floorNumber
-        )
-      )
+      if (activeRequests.some((b) => FLOOR_LABELS.indexOf(b.innerText) === floorNumber))
         return;
 
       btn.classList.add("active");
@@ -62,7 +61,7 @@ export function renderButtons() {
   });
 }
 
-// elevator position
+// Elevator position
 export function updateElevator(floorNumber) {
   elevatorEl.style.bottom = `${floorNumber * FLOOR_HEIGHT}px`;
   currentFloor = floorNumber;
@@ -70,11 +69,21 @@ export function updateElevator(floorNumber) {
 
 // Simulation
 let simulationInterval;
+let totalFloorsTraversed = 0;
+let totalStops = 0;
 let lastFloor = 0;
 let currentFloor = 0;
-export function startSimulation() {
+
+export function startSimulation(ridersQueue = []) {
   if (simulationInterval) return;
-  lastFloor = currentFloor;
+
+  // Queue riders floors
+  ridersQueue.forEach((rider) => {
+    console.log("Queued floor for:", rider.name, rider.to);
+    pendingRiderFloors.add(rider.to);
+    requestFloor(rider.to);
+  });
+
   simulationInterval = setInterval(async () => {
     const state = await moveElevator();
 
@@ -85,18 +94,28 @@ export function startSimulation() {
     updateElevator(state.currentFloor);
     updateIndicator(state.currentFloor, dir);
 
+    const floorsMoved = Math.abs(state.currentFloor - lastFloor);
+    totalFloorsTraversed += floorsMoved;
+    lastFloor = state.currentFloor;
+
+    // ✅ Stop for rider floors
+    if (pendingRiderFloors.has(state.currentFloor)) {
+      elevatorEl.classList.add("open");
+      setTimeout(() => {
+        elevatorEl.classList.remove("open");
+      }, 600);
+
+      totalStops += 1;
+      document.getElementById("floors-count").innerText = totalFloorsTraversed;
+      document.getElementById("stops-count").innerText = totalStops;
+
+      pendingRiderFloors.delete(state.currentFloor);
+    }
+
+    // ✅ Stop for active buttons
     activeRequests.forEach((btn) => {
       const btnFloor = FLOOR_LABELS.indexOf(btn.innerText);
-      if (btnFloor === state.currentFloor) {
-        btn.classList.remove("active");
-
-        // open doors
-        elevatorEl.classList.add("open");
-
-        setTimeout(() => {
-          elevatorEl.classList.remove("open");
-        }, 600);
-      }
+      if (btnFloor === state.currentFloor) btn.classList.remove("active");
     });
 
     activeRequests = activeRequests.filter((btn) => {
@@ -104,8 +123,8 @@ export function startSimulation() {
       return btnFloor !== state.currentFloor;
     });
 
-    // stop when idle
-    if (activeRequests.length === 0) {
+    // Stop simulation if no pending floors or buttons
+    if (pendingRiderFloors.size === 0 && activeRequests.length === 0) {
       clearInterval(simulationInterval);
       simulationInterval = null;
     }
@@ -120,6 +139,7 @@ export function updateIndicator(floorNumber, direction = "up") {
   if (arrow) arrow.innerText = direction === "up" ? "⬆️" : "⬇️";
 }
 
+// Reset UI
 export async function resetUI() {
   clearInterval(simulationInterval);
   simulationInterval = null;
@@ -127,10 +147,13 @@ export async function resetUI() {
   await resetElevator();
   updateElevator(0);
   lastFloor = 0;
+  pendingRiderFloors.clear();
 
-  document
-    .querySelectorAll(".floor-btn")
-    .forEach((b) => b.classList.remove("active"));
+  totalFloorsTraversed = 0;
+  totalStops = 0;
+  document.getElementById("floors-count").innerText = totalFloorsTraversed;
+  document.getElementById("stops-count").innerText = totalStops;
 
+  document.querySelectorAll(".floor-btn").forEach((b) => b.classList.remove("active"));
   activeRequests = [];
 }
