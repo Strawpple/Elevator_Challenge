@@ -47,7 +47,11 @@ export function renderButtons() {
       const floorNumber = FLOOR_LABELS.indexOf(label);
 
       // prevent duplicate requests
-      if (activeRequests.some((b) => FLOOR_LABELS.indexOf(b.innerText) === floorNumber))
+      if (
+        activeRequests.some(
+          (b) => FLOOR_LABELS.indexOf(b.innerText) === floorNumber
+        )
+      )
         return;
 
       btn.classList.add("active");
@@ -74,62 +78,82 @@ let totalStops = 0;
 let lastFloor = 0;
 let currentFloor = 0;
 
-export function startSimulation(ridersQueue = []) {
+export async function startSimulation(ridersQueue = []) {
+  // Sort riders by dropOffFloor ascending
+  ridersQueue.sort((a, b) => a.to - b.to);
+
+  // Queue floors
+  for (const rider of ridersQueue) {
+    const data = {
+      name: rider.name,
+      dropOffFloor: rider.to,
+      currentFloor: currentFloor,
+    };
+
+    const response = await requestFloor(data);
+
+    if (response.success) {
+      pendingRiderFloors.add(data.dropOffFloor);
+    }
+  }
+
+  // Always open doors at start
+  elevatorEl.classList.add("open");
+  setTimeout(() => {
+    elevatorEl.classList.remove("open");
+  }, 600);
+
   if (simulationInterval) return;
 
-  // Queue riders floors
-  ridersQueue.forEach((rider) => {
-    console.log("Queued floor for:", rider.name, rider.to);
-    pendingRiderFloors.add(rider.to);
-    requestFloor(rider.to);
-  });
-
-  simulationInterval = setInterval(async () => {
-    const state = await moveElevator();
-
-    let dir = "up";
-    if (state.currentFloor > lastFloor) dir = "up";
-    else if (state.currentFloor < lastFloor) dir = "down";
-
-    updateElevator(state.currentFloor);
-    updateIndicator(state.currentFloor, dir);
-
-    const floorsMoved = Math.abs(state.currentFloor - lastFloor);
-    totalFloorsTraversed += floorsMoved;
-    lastFloor = state.currentFloor;
-
-    // ✅ Stop for rider floors
-    if (pendingRiderFloors.has(state.currentFloor)) {
-      elevatorEl.classList.add("open");
-      setTimeout(() => {
-        elevatorEl.classList.remove("open");
-      }, 600);
-
-      totalStops += 1;
-      document.getElementById("floors-count").innerText = totalFloorsTraversed;
-      document.getElementById("stops-count").innerText = totalStops;
-
-      pendingRiderFloors.delete(state.currentFloor);
-    }
-
-    // ✅ Stop for active buttons
-    activeRequests.forEach((btn) => {
-      const btnFloor = FLOOR_LABELS.indexOf(btn.innerText);
-      if (btnFloor === state.currentFloor) btn.classList.remove("active");
-    });
-
-    activeRequests = activeRequests.filter((btn) => {
-      const btnFloor = FLOOR_LABELS.indexOf(btn.innerText);
-      return btnFloor !== state.currentFloor;
-    });
-
-    // Stop simulation if no pending floors or buttons
-    if (pendingRiderFloors.size === 0 && activeRequests.length === 0) {
+  simulationInterval = setInterval(() => {
+    if (pendingRiderFloors.size === 0) {
       clearInterval(simulationInterval);
       simulationInterval = null;
+      return;
     }
-  }, 1000);
+
+    // Determine next target floor (lowest pending floor)
+    const nextFloor = Math.min(...pendingRiderFloors);
+
+    // Move elevator one floor at a time
+    if (currentFloor < nextFloor) currentFloor++;
+    else if (currentFloor > nextFloor) currentFloor--;
+    
+    totalFloorsTraversed++;
+    updateElevator(currentFloor);
+
+    // Determine direction
+    const dir = currentFloor > lastFloor ? "up" : "down";
+    updateIndicator(currentFloor, dir);
+
+    // Stop at floor if rider exists
+    if (pendingRiderFloors.has(currentFloor)) {
+      elevatorEl.classList.add("open"); // Open doors
+
+      // Optional: log names of riders exiting at this floor
+      const exitingRiders = ridersQueue
+        .filter(r => r.to === currentFloor)
+        .map(r => r.name);
+
+      console.log(`Floor ${currentFloor}: ${exitingRiders.join(", ")} exited`);
+
+      setTimeout(() => {
+        elevatorEl.classList.remove("open"); // Close doors after 600ms
+      }, 600);
+
+      totalStops++;
+      pendingRiderFloors.delete(currentFloor);
+    }
+
+    lastFloor = currentFloor;
+
+    // Update stats in DOM
+    document.getElementById("floors-count").innerText = totalFloorsTraversed;
+    document.getElementById("stops-count").innerText = totalStops;
+
+  }, 1600); // Update every 600ms per floor
 }
+
 
 // Update floor indicator
 export function updateIndicator(floorNumber, direction = "up") {
@@ -154,6 +178,8 @@ export async function resetUI() {
   document.getElementById("floors-count").innerText = totalFloorsTraversed;
   document.getElementById("stops-count").innerText = totalStops;
 
-  document.querySelectorAll(".floor-btn").forEach((b) => b.classList.remove("active"));
+  document
+    .querySelectorAll(".floor-btn")
+    .forEach((b) => b.classList.remove("active"));
   activeRequests = [];
 }

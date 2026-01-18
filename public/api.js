@@ -1,16 +1,16 @@
 const BASE_URL = 'http://localhost:3000/elevator';
 
 // Request elevator to a floor
-export async function requestFloor(floor) {
+export async function requestFloor(riderData) {
   try {
     
     const response = await fetch(`${BASE_URL}/request`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name: 'Guest',
-        currentFloor: 0, 
-        dropOffFloor: floor
+        name: riderData.name,
+        currentFloor: riderData.currentFloor,
+        dropOffFloor: riderData.dropOffFloor,
       })
     });
     return await response.json();
